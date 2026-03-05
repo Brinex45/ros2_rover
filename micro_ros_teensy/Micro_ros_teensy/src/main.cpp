@@ -268,7 +268,7 @@ rcl_node_t node;
 
 #define ESP_ADDR 8         // ESP32 Rover address
 #define ARM_TEENSY_ADDR 9  // Arm Teensy I2C address
-#define PWM_MAX 70
+#define PWM_MAX 100
 #define DEADZONE 25
 // #define size 7
 

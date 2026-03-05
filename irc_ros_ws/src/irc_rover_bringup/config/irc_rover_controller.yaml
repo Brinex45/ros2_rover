@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # coltroller updates every 0.1 secs, how frequest data is processed and commands are sent
+    update_rate: 50  # coltroller updates every 0.1 secs, how frequest data is processed and commands are sent
 
     #controllers
     joint_state_broadcaster:
@@ -42,7 +42,7 @@ rover_base_controller:
     open_loop: true
     enable_odom_tf: true
 
-    cmd_vel_timeout: 0.1      # timeout of vel = 0, when no data is received
+    cmd_vel_timeout: 0.5      # timeout of vel = 0, when no data is received
     #publish_limited_velocity: true
     use_stamped_vel: false
     #velocity_rolling_window_size: 10
