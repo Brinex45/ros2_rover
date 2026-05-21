@@ -227,5 +227,3 @@ Both packages communicate with the embedded controller via micro-ROS topics over
 Developed for the **International Rover Challenge 2026** by **Team Automatons**.
 
 ---
-
-> The rover software stack is actively evolving. New capabilities in localization, communication, and control are continuously being added.
