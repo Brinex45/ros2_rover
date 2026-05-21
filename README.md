@@ -157,7 +157,7 @@ ros2 launch arm_bringup arm.launch.py
 
 **micro-ROS agent (connect embedded controller):**
 ```bash
-micro_ros_agent serial --dev /dev/ttyACM0
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0
 ```
 
 **RViz visualisation:**
@@ -174,6 +174,7 @@ Two PS4 controllers are supported simultaneously — one for rover drive control
 - `/ps4_data_rover` — drive commands
 - `/ps4_data_arm` — arm joint commands
 
+The Rover's PS4 has more priority i.e. if the Rover PS4 gets disconnected the Arm's PS4 is shifted to Rover so that the Navigation is not hindered
 ---
 
 ## ros2_control Packages
