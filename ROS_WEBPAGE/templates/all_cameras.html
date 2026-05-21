@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>All Cameras – TEAM AUTOMATONS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* ================= PAGE SPECIFIC STYLES ================= */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .all-cameras-page {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #000;
+    }
+
+    /* ================= HEADER ================= */
+    .header {
+      height: 60px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-bottom: 2px solid #00bfff;
+      background: #0a0a0a;
+      padding: 0 15px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #00bfff;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    .back-btn {
+      position: absolute;
+      left: 12px;
+      padding: 8px 14px;
+      border: 1px solid #00bfff;
+      background: #000;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(0, 191, 255, 0.2);
+    }
+
+    .stopwatch-display {
+      position: absolute;
+      left: 100px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #00bfff;
+      padding: 6px 12px;
+      border: 1px solid #00bfff;
+      border-radius: 6px;
+      background: rgba(0, 191, 255, 0.1);
+    }
+
+    .gps-display {
+      position: absolute;
+      right: 15px;
+      font-size: 13px;
+      color: #00bfff;
+      padding: 6px 12px;
+      border: 1px solid #00bfff;
+      border-radius: 6px;
+      background: rgba(0, 191, 255, 0.1);
+    }
+
+    /* ================= GRID CONTAINER ================= */
+    .wall {
+      flex: 1;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    /* ================= CAMERA GRID ================= */
+    .camera-grid {
+      height: 100%;
+      width: 100%;
+      display: grid;
+      gap: 12px;
+    }
+
+    /* ================= CAMERA TILE ================= */
+    .cam-card {
+      background: #0a0a0a;
+      border: 2px solid #00bfff;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .cam-card:hover {
+      border-color: #00ff99;
+      box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+    }
+
+    .cam-card.active {
+      border: 3px solid #00ff99;
+      box-shadow: 0 0 20px rgba(0, 255, 153, 0.4);
+    }
+
+    /* Camera frame */
+    .cam-frame {
+      flex: 1;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      min-height: 200px;
+    }
+
+    .cam-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Label and controls footer */
+    .cam-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #0a0a0a;
+      border-top: 1px solid #333;
+    }
+
+    .cam-card h3 {
+      margin: 0;
+      font-size: 14px;
+      color: #00bfff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    .capture-btn {
+      padding: 6px 12px;
+      border: 1px solid #00bfff;
+      background: #000;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .capture-btn:hover {
+      background: rgba(0, 191, 255, 0.3);
+      color: #00bfff;
+    }
+
+    /* No cameras message */
+    .no-cameras {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #666;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="all-cameras-page">
+    <!-- HEADER -->
+    <div class="header">
+      <button class="back-btn" onclick="window.location='/'">← Back</button>
+      <div class="stopwatch-display" id="stopwatch">00:00:00</div>
+      <h1>Camera Wall</h1>
+      <div class="gps-display" id="gpsDisplay">GPS: Loading...</div>
+    </div>
+
+    <!-- CAMERA GRID -->
+    <div class="wall">
+      <div id="cameraGrid" class="camera-grid">
+        <div class="no-cameras">Loading cameras...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const currentCam = parseInt(params.get("camera")) || 0;
+
+    /* ===== STOPWATCH (Synced with localStorage) ===== */
+    function updateStopwatch() {
+      let swStartTime = localStorage.getItem('sw_startTime') ? parseInt(localStorage.getItem('sw_startTime')) : null;
+      let swElapsed = localStorage.getItem('sw_elapsed') ? parseInt(localStorage.getItem('sw_elapsed')) : 0;
+      let swRunning = localStorage.getItem('sw_running') === 'true';
+
+      let total = swElapsed;
+      if (swRunning && swStartTime) total += Date.now() - swStartTime;
+
+      const hrs = String(Math.floor(total / 3600000)).padStart(2, "0");
+      const mins = String(Math.floor((total % 3600000) / 60000)).padStart(2, "0");
+      const secs = String(Math.floor((total % 60000) / 1000)).padStart(2, "0");
+
+      document.getElementById("stopwatch").textContent = `${hrs}:${mins}:${secs}`;
+    }
+    setInterval(updateStopwatch, 1000);
+    updateStopwatch();
+
+    /* ===== GRID LAYOUT CALCULATOR ===== */
+    function computeGrid(n) {
+      if (n === 1) return { cols: 1, rows: 1 };
+      if (n === 2) return { cols: 2, rows: 1 };
+      if (n <= 4) return { cols: 2, rows: 2 };
+      if (n <= 6) return { cols: 3, rows: 2 };
+      if (n <= 9) return { cols: 3, rows: 3 };
+      const cols = Math.ceil(Math.sqrt(n));
+      const rows = Math.ceil(n / cols);
+      return { cols, rows };
+    }
+
+    /* ===== GPS UPDATE ===== */
+    async function updateGPS() {
+      try {
+        const res = await fetch("/data");
+        const data = await res.json();
+        const gpsEl = document.getElementById("gpsDisplay");
+        gpsEl.textContent = `Lat: ${data.latitude} | Lon: ${data.longitude}`;
+      } catch (e) {
+        console.error("GPS fetch error:", e);
+      }
+    }
+
+    /* ===== CAPTURE IMAGE ===== */
+    function captureImage(camId, event) {
+      event.stopPropagation();
+      window.open("/capture/" + camId, "_blank");
+    }
+
+    /* ===== LOAD CAMERAS ===== */
+    async function loadCameras() {
+      const grid = document.getElementById("cameraGrid");
+
+      try {
+        const res = await fetch("/available_cameras");
+        const data = await res.json();
+        const cams = data.cameras || [];
+
+        grid.innerHTML = "";
+
+        if (cams.length === 0) {
+          grid.innerHTML = '<div class="no-cameras">No cameras detected</div>';
+          return;
+        }
+
+        const { cols, rows } = computeGrid(cams.length);
+        grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+        cams.forEach(cam => {
+          const card = document.createElement("div");
+          card.className = "cam-card";
+
+          if (cam.id === currentCam) {
+            card.classList.add("active");
+          }
+
+          // Camera frame with click to select
+          const frame = document.createElement("div");
+          frame.className = "cam-frame";
+          frame.onclick = () => {
+            window.location.href = "/?camera=" + cam.id;
+          };
+
+          const img = document.createElement("img");
+          img.src = "/camera/" + cam.id;
+          img.alt = cam.label;
+
+          frame.appendChild(img);
+
+          // Footer with label and capture button
+          const footer = document.createElement("div");
+          footer.className = "cam-footer";
+
+          const label = document.createElement("h3");
+          label.textContent = cam.label;
+
+          const captureBtn = document.createElement("button");
+          captureBtn.className = "capture-btn";
+          captureBtn.textContent = "📷 Capture";
+          captureBtn.onclick = (e) => captureImage(cam.id, e);
+
+          footer.appendChild(label);
+          footer.appendChild(captureBtn);
+
+          card.appendChild(frame);
+          card.appendChild(footer);
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error("Error loading cameras:", e);
+        grid.innerHTML = '<div class="no-cameras">Error loading cameras</div>';
+      }
+    }
+
+    /* ===== INITIALIZE ===== */
+    loadCameras();
+    updateGPS();
+
+    // Update GPS every 2 seconds
+    setInterval(updateGPS, 2000);
+
+    /* Recompute layout on resize */
+    let resizeTimeout;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(loadCameras, 250);
+    });
+  </script>
+
+</body>
+
+</html>

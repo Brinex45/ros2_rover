@@ -1,0 +1,108 @@
+/* ==========================
+   ALL CAMERAS PAGE STYLE
+   TEAM AUTOMATONS – BLUE STATIC
+   ========================== */
+
+:root {
+  --bg: #000;
+  --panel: #0a0a0a;
+  --neon-blue: #00bfff;
+  --border: #007bff;
+  --text: #ffffff;
+}
+
+/* ==========================
+   BASE
+   ========================== */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Times New Roman", Times, serif;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+
+
+/* ==========================
+   TITLE
+   ========================== */
+h1 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+/* ==========================
+   CAMERA GRID
+   ========================== */
+.all-cams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* ==========================
+   CAMERA CARD
+   ========================== */
+.cam-box {
+  background: var(--panel);
+  border: 1px solid var(--neon-blue);
+  border-radius: 10px;
+  padding: 10px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.cam-box:hover {
+  transform: scale(1.02);
+}
+
+/* ==========================
+   CAMERA FEED
+   ========================== */
+.cam-box img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--neon-blue);
+}
+
+/* ==========================
+   BUTTONS
+   ========================== */
+.capture-btn,
+.set-btn {
+  background: transparent;
+  color: white;
+  border: 1px solid var(--neon-blue);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+}
+
+.capture-btn:hover,
+.set-btn:hover {
+  background: rgba(0, 191, 255, 0.15);
+}
+
+/* ==========================
+   RESPONSIVE
+   ========================== */
+@media (max-width: 768px) {
+  .cam-box {
+    width: 90%;
+  }
+
+  .cam-box img {
+    height: 180px;
+  }
+}

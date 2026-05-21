@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>TEAM AUTOMATONS BASE STATION</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+  <script>
+    const SELECTED_CAMERA = {{ selected_camera | int }};
+  </script>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <div class="page">
+
+    <!-- ================= HEADER ================= -->
+    <header class="header-grid">
+      <div class="card header-logo">
+        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" style="height:60px;">
+      </div>
+
+      <div class="card header-title">
+        <h1>TEAM AUTOMATONS BASE STATION</h1>
+      </div>
+
+      <div class="card header-gps">
+        <div><b>Latitude:</b> <span id="live-lat">--</span></div>
+        <div><b>Longitude:</b> <span id="live-lon">--</span></div>
+      </div>
+    </header>
+
+    <!-- ================= MAIN ================= -->
+    <section class="middle-grid">
+
+
+
+      <!-- ===== CENTER CAMERA ===== -->
+      <section class="card camera-panel">
+        <h3>Camera Feed (Click to switch)</h3>
+
+        <!-- MAIN CAMERA FEED -->
+        <a href="{{ url_for('all_cameras') }}">
+          <img id="mainFeed" class="main-feed" src="{{ url_for('camera_feed', camera_id=selected_camera) }}"
+            alt="Camera Feed">
+        </a>
+        <div style="margin-top:6px;">
+          <button onclick="window.location='/capture/{{ selected_camera }}'">
+            Capture Image
+          </button>
+        </div>
+
+        <!-- ===== PANORAMA CONTROLS ===== -->
+        <div style="margin-top:8px;">
+          <button id="panoAddBtn">Add Frame</button>
+          <button id="panoStitchBtn">Capture Panorama</button>
+          <span id="panoCounter">Frames: 0</span>
+        </div>
+      </section>
+
+      <!-- ===== RIGHT PANEL ===== -->
+      <aside class="right-panel">
+        <div class="card">
+          <h3>Stopwatch</h3>
+          <div id="stopwatch">00:00:00</div>
+          <div style="margin-top:6px;">
+            <button id="swStart">Start</button>
+            <button id="swStop">Stop</button>
+            <button id="swReset">Reset</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Stored Coordinates</h3>
+          <div>Lat: <span id="latitude">--</span></div>
+          <div>Lon: <span id="longitude">--</span></div>
+          <div style="display: flex; gap: 5px;">
+            <button id="storeBtn" style="flex: 1;">Store</button>
+            <button id="clearBtn" style="background-color: #ff3333; flex: 1;">Clear</button>
+          </div>
+
+          <div style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
+            <button id="addCoordBtn" style="background-color: #444;">Add Coordinates</button>
+            <div id="manualCoordForm" style="display: none; margin-top: 8px;">
+              <div style="margin-bottom: 5px;">
+                <label style="font-size: 12px;">Lat:</label>
+                <input type="text" id="manualLat" style="width: 80px; padding: 2px;">
+              </div>
+              <div style="margin-bottom: 5px;">
+                <label style="font-size: 12px;">Lon:</label>
+                <input type="text" id="manualLon" style="width: 80px; padding: 2px;">
+              </div>
+              <div style="margin-bottom: 5px;">
+                <label style="font-size: 12px;">Desc:</label>
+                <input type="text" id="manualDesc" style="width: 80px; padding: 2px;" placeholder="Optional">
+              </div>
+              <button id="saveManualBtn"
+                style="width: 100%; font-size: 12px; background-color: #00bfff; color: black;">Save Manual</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </section>
+
+  </div>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    /* ===== GPS ===== */
+    setInterval(() => {
+      fetch("/data")
+        .then(r => r.json())
+        .then(d => {
+          document.getElementById("live-lat").textContent = d.latitude;
+          document.getElementById("live-lon").textContent = d.longitude;
+          document.getElementById("latitude").textContent = d.latitude;
+          document.getElementById("longitude").textContent = d.longitude;
+        });
+    }, 1000);
+
+
+
+    /* ===== STOPWATCH (Persisted with localStorage) ===== */
+    // Load saved state from localStorage
+    let swStartTime = localStorage.getItem('sw_startTime') ? parseInt(localStorage.getItem('sw_startTime')) : null;
+    let swElapsed = localStorage.getItem('sw_elapsed') ? parseInt(localStorage.getItem('sw_elapsed')) : 0;
+    let swRunning = localStorage.getItem('sw_running') === 'true';
+
+    // If timer was running when page was left, calculate elapsed time
+    if (swRunning && swStartTime) {
+      // Timer is still running from before
+    } else if (!swRunning) {
+      swStartTime = null;
+    }
+
+    function saveStopwatchState() {
+      localStorage.setItem('sw_startTime', swStartTime || '');
+      localStorage.setItem('sw_elapsed', swElapsed);
+      localStorage.setItem('sw_running', swRunning);
+    }
+
+    function updateStopwatch() {
+      let total = swElapsed;
+      if (swRunning && swStartTime) total += Date.now() - swStartTime;
+
+      const hrs = String(Math.floor(total / 3600000)).padStart(2, "0");
+      const mins = String(Math.floor((total % 3600000) / 60000)).padStart(2, "0");
+      const secs = String(Math.floor((total % 60000) / 1000)).padStart(2, "0");
+
+      document.getElementById("stopwatch").textContent =
+        `${hrs}:${mins}:${secs}`;
+    }
+    setInterval(updateStopwatch, 1000);
+    updateStopwatch(); // Show immediately on load
+
+    document.getElementById("swStart").onclick = () => {
+      if (!swRunning) {
+        swStartTime = Date.now();
+        swRunning = true;
+        saveStopwatchState();
+      }
+    };
+
+    document.getElementById("swStop").onclick = () => {
+      if (swRunning) {
+        swElapsed += Date.now() - swStartTime;
+        swRunning = false;
+        swStartTime = null;
+        saveStopwatchState();
+      }
+    };
+
+    document.getElementById("swReset").onclick = () => {
+      swElapsed = 0;
+      swRunning = false;
+      swStartTime = null;
+      saveStopwatchState();
+      updateStopwatch();
+    };
+
+
+    /* ===== PANORAMA ===== */
+    let panoFrames = 0;
+
+    document.getElementById("panoAddBtn").onclick = () => {
+      fetch(`/panorama/add/${SELECTED_CAMERA}`, { method: "POST" })
+        .then(r => r.json())
+        .then(d => {
+          panoFrames = d.frames;
+          document.getElementById("panoCounter").textContent =
+            "Frames: " + panoFrames;
+        });
+    };
+
+    document.getElementById("panoStitchBtn").onclick = () => {
+      if (panoFrames < 3) {
+        alert("Capture at least 3 frames");
+        return;
+      }
+      window.location = "/panorama/stitch";
+      panoFrames = 0;
+      document.getElementById("panoCounter").textContent = "Frames: 0";
+    };
+
+    /* ===== STORE COORDINATES ===== */
+    document.getElementById("storeBtn").onclick = () => {
+      const lat = document.getElementById("live-lat").textContent;
+      const lon = document.getElementById("live-lon").textContent;
+
+      if (lat === "--" || lon === "--") {
+        showToast("⚠️ No valid GPS coordinates to store!", "error");
+        return;
+      }
+
+      const data = {
+        latitude: lat,
+        longitude: lon,
+        color: "Green",
+        type: "Manual",
+        desc: "User stored"
+      };
+
+      fetch("/store_coord", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.ok) {
+            showToast("✅ Coordinates Stored!", "success");
+          } else {
+            showToast("❌ Error: " + (d.error || "Unknown"), "error");
+          }
+        })
+        .catch(e => showToast("❌ Network Error: " + e, "error"));
+    };
+
+    /* ===== CLEAR COORDINATES ===== */
+    document.getElementById("clearBtn").onclick = () => {
+      if (!confirm("Are you sure you want to delete ALL stored coordinates?")) {
+        return;
+      }
+
+      fetch("/clear_coords", { method: "POST" })
+        .then(r => r.json())
+        .then(d => {
+          if (d.ok) {
+            showToast("🗑️ All Coordinates Cleared!", "success");
+          } else {
+            showToast("❌ Error Clearing: " + (d.error || "Unknown"), "error");
+          }
+        })
+        .catch(e => showToast("❌ Network Error: " + e, "error"));
+    };
+
+    /* ===== MANUAL COORDINATES ===== */
+    const manualForm = document.getElementById("manualCoordForm");
+
+    document.getElementById("addCoordBtn").onclick = () => {
+      if (manualForm.style.display === "none") {
+        manualForm.style.display = "block";
+      } else {
+        manualForm.style.display = "none";
+      }
+    };
+
+    document.getElementById("saveManualBtn").onclick = () => {
+      const lat = document.getElementById("manualLat").value.trim();
+      const lon = document.getElementById("manualLon").value.trim();
+      const desc = document.getElementById("manualDesc").value.trim();
+
+      if (!lat || !lon) {
+        showToast("⚠️ Please enter both Latitude and Longitude", "error");
+        return;
+      }
+
+      const data = {
+        latitude: lat,
+        longitude: lon,
+        color: "Blue",
+        type: "Manual",
+        desc: desc || "Manual Entry"
+      };
+
+      fetch("/store_coord", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.ok) {
+            showToast("✅ Manual Coordinate Saved!", "success");
+            document.getElementById("manualLat").value = "";
+            document.getElementById("manualLon").value = "";
+            document.getElementById("manualDesc").value = "";
+            manualForm.style.display = "none";
+          } else {
+            showToast("❌ Error: " + (d.error || "Unknown"), "error");
+          }
+        })
+        .catch(e => showToast("❌ Network Error: " + e, "error"));
+    };
+
+    /* ===== TOAST NOTIFICATIONS ===== */
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+
+      container.appendChild(toast);
+
+      // Auto remove after 3 seconds (animation handles fade out, this cleanup)
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+  </script>
+
+</body>
+
+</html>
