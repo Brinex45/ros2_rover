@@ -169,12 +169,11 @@ rviz2
 
 ## PS4 Controller
 
-Two PS4 controllers are supported simultaneously — one for rover drive control and one for arm control. The `ps4_data_node` detects connected joysticks automatically and publishes on separate topics:
+Two PS4 controllers are supported simultaneously — one for rover drive control and one for arm control.The Rover's PS4 has more priority i.e. if the Rover PS4 gets disconnected the Arm's PS4 is shifted to Rover so that the Navigation is not hindered. The `ps4_data_node` detects connected joysticks automatically and publishes on separate topics:
 
 - `/ps4_data_rover` — drive commands
 - `/ps4_data_arm` — arm joint commands
 
-The Rover's PS4 has more priority i.e. if the Rover PS4 gets disconnected the Arm's PS4 is shifted to Rover so that the Navigation is not hindered
 ---
 
 ## ros2_control Packages
